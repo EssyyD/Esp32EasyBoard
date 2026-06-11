@@ -33,6 +33,24 @@ class DriverMotorTb6612Device : public DeviceGpioBase<DriverMotorTb6612Device> {
 
     void standby();
 
+    // motor1
+    void motor1SetSpeed(uint8_t speed);  // 0~100
+    void motor1Forward();
+    void motor1Backward();
+    void motor1Brake();
+    void motor1Coast();
+
+    // motor2（引脚为 NC 时 no-op）
+    void motor2SetSpeed(uint8_t speed);  // 0~100
+    void motor2Forward();
+    void motor2Backward();
+    void motor2Brake();
+    void motor2Coast();
+
+   private:
+    uint8_t _motor1Speed = 0;
+    uint8_t _motor2Speed = 0;
+
    protected:
     static constexpr bool _MULTI_INSTANCE = false;
 };

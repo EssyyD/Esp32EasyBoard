@@ -26,12 +26,14 @@ DriverMotorTb6612Device* DriverMotorTb6612Device::instance(
 bool DriverMotorTb6612Device::boot(const char* serviceName) {
     if (!DeviceGpioBase::boot(serviceName)) return false;
 
-    // motor1 (必接)
-    pinMode(this->PIN_GPIOS.motor1PWM.pin, OUTPUT);
-    pinMode(this->PIN_GPIOS.motor1In1.pin, OUTPUT);
-    pinMode(this->PIN_GPIOS.motor1In2.pin, OUTPUT);
-    ledcSetup(0, 20000, 8);
-    ledcAttachPin(this->PIN_GPIOS.motor1PWM.pin, 0);
+    // motor1 (可选)
+    if (this->PIN_GPIOS.motor1PWM.pin != GPIO_NUM_NC) {
+        pinMode(this->PIN_GPIOS.motor1PWM.pin, OUTPUT);
+        pinMode(this->PIN_GPIOS.motor1In1.pin, OUTPUT);
+        pinMode(this->PIN_GPIOS.motor1In2.pin, OUTPUT);
+        ledcSetup(0, 20000, 8);
+        ledcAttachPin(this->PIN_GPIOS.motor1PWM.pin, 0);
+    }
 
     // motor2 (可选)
     if (this->PIN_GPIOS.motor2PWM.pin != GPIO_NUM_NC) {
@@ -54,13 +56,11 @@ bool DriverMotorTb6612Device::boot(const char* serviceName) {
     if (this->motors.motor1) {
         this->motors.motor1->setEasyBoard(this->bootEASYB);
         this->motors.motor1->boot(this->deviceName);
-        this->motors.motor1->setDriver(this, 0, this->PIN_GPIOS.motor1In1.pin, this->PIN_GPIOS.motor1In2.pin);
     }
 
     if (this->motors.motor2) {
         this->motors.motor2->setEasyBoard(this->bootEASYB);
         this->motors.motor2->boot(this->deviceName);
-        this->motors.motor2->setDriver(this, 1, this->PIN_GPIOS.motor2In1.pin, this->PIN_GPIOS.motor2In2.pin);
     }
 
     Serial.printf("[%s] boot OK\n", this->deviceName);
@@ -87,4 +87,66 @@ void DriverMotorTb6612Device::unboot(const char* serviceName) {
 
 void DriverMotorTb6612Device::standby() {
     digitalWrite(this->PIN_GPIOS.stby.pin, LOW);
+}
+
+// ---- motor1 ----
+void DriverMotorTb6612Device::motor1SetSpeed(uint8_t speed) {
+    this->_motor1Speed = map(constrain(speed, 0, 100), 0, 100, 0, 255);
+}
+
+void DriverMotorTb6612Device::motor1Forward() {
+    digitalWrite(this->PIN_GPIOS.motor1In1.pin, HIGH);
+    digitalWrite(this->PIN_GPIOS.motor1In2.pin, LOW);
+    ledcWrite(0, this->_motor1Speed);
+}
+
+void DriverMotorTb6612Device::motor1Backward() {
+    digitalWrite(this->PIN_GPIOS.motor1In1.pin, LOW);
+    digitalWrite(this->PIN_GPIOS.motor1In2.pin, HIGH);
+    ledcWrite(0, this->_motor1Speed);
+}
+
+void DriverMotorTb6612Device::motor1Brake() {
+    digitalWrite(this->PIN_GPIOS.motor1In1.pin, LOW);
+    digitalWrite(this->PIN_GPIOS.motor1In2.pin, LOW);
+    ledcWrite(0, 0);
+}
+
+void DriverMotorTb6612Device::motor1Coast() {
+    digitalWrite(this->PIN_GPIOS.motor1In1.pin, HIGH);
+    digitalWrite(this->PIN_GPIOS.motor1In2.pin, HIGH);
+    ledcWrite(0, 0);
+}
+
+// ---- motor2 ----
+void DriverMotorTb6612Device::motor2SetSpeed(uint8_t speed) {
+    this->_motor2Speed = map(constrain(speed, 0, 100), 0, 100, 0, 255);
+}
+
+void DriverMotorTb6612Device::motor2Forward() {
+    if (this->PIN_GPIOS.motor2PWM.pin == GPIO_NUM_NC) return;
+    digitalWrite(this->PIN_GPIOS.motor2In1.pin, HIGH);
+    digitalWrite(this->PIN_GPIOS.motor2In2.pin, LOW);
+    ledcWrite(1, this->_motor2Speed);
+}
+
+void DriverMotorTb6612Device::motor2Backward() {
+    if (this->PIN_GPIOS.motor2PWM.pin == GPIO_NUM_NC) return;
+    digitalWrite(this->PIN_GPIOS.motor2In1.pin, LOW);
+    digitalWrite(this->PIN_GPIOS.motor2In2.pin, HIGH);
+    ledcWrite(1, this->_motor2Speed);
+}
+
+void DriverMotorTb6612Device::motor2Brake() {
+    if (this->PIN_GPIOS.motor2PWM.pin == GPIO_NUM_NC) return;
+    digitalWrite(this->PIN_GPIOS.motor2In1.pin, LOW);
+    digitalWrite(this->PIN_GPIOS.motor2In2.pin, LOW);
+    ledcWrite(1, 0);
+}
+
+void DriverMotorTb6612Device::motor2Coast() {
+    if (this->PIN_GPIOS.motor2PWM.pin == GPIO_NUM_NC) return;
+    digitalWrite(this->PIN_GPIOS.motor2In1.pin, HIGH);
+    digitalWrite(this->PIN_GPIOS.motor2In2.pin, HIGH);
+    ledcWrite(1, 0);
 }

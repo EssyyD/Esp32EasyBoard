@@ -10,8 +10,9 @@ void MotionServiceRtos::initRtos() {
 }
 
 void MotionServiceRtos::_rtosBegin() {
-    EASYB.devicesGpio.tb6612Wheels->boot(this->serviceName);
-    EASYB.devicesGpio.tb6612Wheels->motors.motor1->setSpeed(100);
+    auto* driver = EASYB.devicesGpio.tb6612Wheels;
+    driver->boot(this->serviceName);
+    driver->motor1SetSpeed(100);
     Serial.println("[Motion] boot OK");
 }
 
@@ -19,17 +20,20 @@ void MotionServiceRtos::_rtosLoop() {
     this->_testPhase  = (this->_testPhase + 1) % 100;
     this->_printCycle = (this->_printCycle + 1) % 10;
 
+    auto* driver = EASYB.devicesGpio.tb6612Wheels;
+
     if (this->_testPhase < 50)
-        EASYB.devicesGpio.tb6612Wheels->motors.motor1->forward();
+        driver->motor1Forward();
     else
-        EASYB.devicesGpio.tb6612Wheels->motors.motor1->backward();
+        driver->motor1Backward();
 
     if (this->_printCycle == 0)
         Serial.printf("[Motion] phase=%d enc=%ld\n", this->_testPhase,
-                      EASYB.devicesGpio.tb6612Wheels->motors.motor1->getPosition());
+                      driver->motors.motor1->getPosition());
 }
 
 void MotionServiceRtos::_rtosEnd() {
-    EASYB.devicesGpio.tb6612Wheels->motors.motor1->brake();
-    EASYB.devicesGpio.tb6612Wheels->unboot(this->serviceName);
+    auto* driver = EASYB.devicesGpio.tb6612Wheels;
+    driver->motor1Brake();
+    driver->unboot(this->serviceName);
 }
